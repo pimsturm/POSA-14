@@ -10,74 +10,84 @@ import android.util.Log;
 /**
  * @class AndroidPlatformStrategy
  * 
- * @brief Provides methods that define a platform-independent API for
- *        output data to Android UI thread and synchronizing on thread
- *        completion in the ping/pong game.  It plays the role of the
- *        "Concrete Strategy" in the Strategy pattern.
+ * @brief Provides methods that define a platform-independent API for output
+ *        data to Android UI thread and synchronizing on thread completion in
+ *        the ping/pong game. It plays the role of the "Concrete Strategy" in
+ *        the Strategy pattern.
  */
-public class AndroidPlatformStrategy extends PlatformStrategy
-{	
-    /** TextViewVariable. */
-    private TextView mTextViewOutput;
-	
-    /** Activity variable finds gui widgets by view. */
-    private WeakReference<Activity> mActivity;
+public class AndroidPlatformStrategy extends PlatformStrategy {
+	/** TextViewVariable. */
+	private TextView mTextViewOutput;
 
-    public AndroidPlatformStrategy(Object output,
-                                   final Object activityParam)
-    {
-        /**
-         * A textview output which displays calculations and
-         * expression trees.
-         */
-        mTextViewOutput = (TextView) output;
+	/** Activity variable finds gui widgets by view. */
+	private WeakReference<Activity> mActivity;
 
-        /** The current activity window (succinct or verbose). */
-        mActivity = new WeakReference<Activity>((Activity) activityParam);
-    }
+	public AndroidPlatformStrategy(Object output, final Object activityParam) {
+		/**
+		 * A textview output which displays calculations and expression trees.
+		 */
+		mTextViewOutput = (TextView) output;
 
-    /**
-     * Latch to decrement each time a thread exits to control when the
-     * play() method returns.
-     */
-    private static CountDownLatch mLatch = null;
+		/** The current activity window (succinct or verbose). */
+		mActivity = new WeakReference<Activity>((Activity) activityParam);
+	}
 
-    /** Do any initialization needed to start a new game. */
-    public void begin()
-    {
-        /** (Re)initialize the CountDownLatch. */
-        // TODO - You fill in here.
-    	mLatch = new CountDownLatch(2);
-    }
+	/**
+	 * Latch to decrement each time a thread exits to control when the play()
+	 * method returns.
+	 */
+	private static CountDownLatch mLatch = null;
 
-    /** Print the outputString to the display. */
-    public void print(final String outputString)
-    {
-        /** 
-         * Create a Runnable that's posted to the UI looper thread
-         * and appends the outputString to a TextView. 
-         */
-        // TODO - You fill in here.
-    }
+	/** Do any initialization needed to start a new game. */
+	public void begin() {
+		/** (Re)initialize the CountDownLatch. */
+		// TODO - You fill in here.
+		mLatch = new CountDownLatch(NUMBER_OF_THREADS);
+	}
 
-    /** Indicate that a game thread has finished running. */
-    public void done()
-    {	
-        // TODO - You fill in here.
-    }
+	/** Print the outputString to the display. */
+	public void print(final String outputString) {
+		/**
+		 * Create a Runnable that's posted to the UI looper thread and appends
+		 * the outputString to a TextView.
+		 */
+		// TODO - You fill in here.
+		mActivity.get().runOnUiThread(new Runnable() {
 
-    /** Barrier that waits for all the game threads to finish. */
-    public void awaitDone()
-    {
-        // TODO - You fill in here.
-    }
+			@Override
+			public void run() {
+				
+				mTextViewOutput.setText(mTextViewOutput.getText() + outputString + "\n");
+			}
+		});
+	}
 
-    /** 
-     * Error log formats the message and displays it for the
-     * debugging purposes.
-     */
-    public void errorLog(String javaFile, String errorMessage) 
-    {
-       Log.e(javaFile, errorMessage);
-    }
+	/** Indicate that a game thread has finished running. */
+	public void done() {
+		// TODO - You fill in here.
+        
+		mActivity.get().runOnUiThread(new Runnable() {
+
+			@Override
+			public void run() {
+				mLatch.countDown();
+			}
+		});
+	}
+
+	/** Barrier that waits for all the game threads to finish. */
+	public void awaitDone() {
+		// TODO - You fill in here.
+		try {
+			mLatch.await();
+		} catch (java.lang.InterruptedException e) {
+		}
+	}
+
+	/**
+	 * Error log formats the message and displays it for the debugging purposes.
+	 */
+	public void errorLog(String javaFile, String errorMessage) {
+		Log.e(javaFile, errorMessage);
+	}
 }
